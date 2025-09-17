@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>实验一 - 计算机图形学</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        h1 {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-align: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .demo-link {
+            display: block;
+            padding: 1.2rem;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+
+        .demo-link:nth-child(2) {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .demo-link:nth-child(2):hover {
+            background: linear-gradient(45deg, #1976D2, #2196F3);
+        }
+
+        .demo-link:nth-child(3) {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+
+        .demo-link:nth-child(3):hover {
+            background: linear-gradient(45deg, #F57C00, #FF9800);
+        }
+
+        .demo-link:nth-child(4) {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+        }
+
+        .demo-link:nth-child(4):hover {
+            background: linear-gradient(45deg, #7B1FA2, #9C27B0);
+        }
+
+        .demo-link:nth-child(5) {
+            background: linear-gradient(45deg, #E91E63, #C2185B);
+        }
+
+        .demo-link:nth-child(5):hover {
+            background: linear-gradient(45deg, #C2185B, #E91E63);
+        }
+
+        .footer {
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 计算机图形学实验一</h1>
+
+    <div class="container">
+        <ul class="demo-links">
+            <li><a href="demos/chap1-demo-1.html" class="demo-link">任务a - 修改颜色</a></li>
+            <li><a href="demos/chap1-demo-2.html" class="demo-link">任务b - 绘制四边形</a></li>
+            <li><a href="demos/chap1-demo-3.html" class="demo-link">任务c - 多图形组合</a></li>
+            <li><a href="demos/chap1-demo-5.html" class="demo-link">任务d - 不同颜色</a></li>
+            <li><a href="demos/chap1-demo-6.html" class="demo-link">任务e - 颜色组合</a></li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        计算机图形学实验 | WebGL 技术演示
+    </div>
+    <div>注：渲染效果为ai生成</div>
+</body>
+</html>
