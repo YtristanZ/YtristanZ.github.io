@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+    <title>WebGL场景绘制与动画系统</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+    <script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+in vec4 vPosition;
+in vec4 vColor;
+out vec4 aColor;
+
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+void main() {
+    aColor = vColor;
+    gl_Position = uProjectionMatrix * uModelViewMatrix * vPosition;
+}</script>
+	<script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+precision mediump float;
+in vec4 aColor;
+out vec4 fColor;
+
+void main() {
+    fColor = aColor;
+}</script>
+
+    <script type="text/javascript" src="common/webgl-utils.js"></script>
+    <script type="text/javascript" src="common/initShaders.js"></script>
+    <script type="text/javascript" src="common/gl-matrix-min.js"></script>
+
+    <script type="text/javascript" src="js/rotcubeq.js"></script>
+</head>
+<body>
+<header>
+		<h1>WebGL场景绘制与动画系统</h1>
+		<p class="subtitle">在画布上实现不同图形独特的动画效果</p>
+	</header>
+
+    <div class="container">
+		<div class="control-panel">
+			<div class="control-section">
+				<h2>选择图形</h2>
+				<div class="shape-buttons">
+					<button  id="triangle-btn" class="active">
+						<span>▲</span>正三角形
+					</button>
+					<button id="square-btn">
+						<span>■</span>正方形
+					</button>
+					<button id="cube-btn">
+						<span>▢</span>立方体
+					</button>
+					<button id="circle-btn">
+						<span>●</span>圆形
+					</button>
+				</div>
+			</div>
+
+			<div class="control-section">
+				<h2>颜色设置</h2>
+				<div class="color-picker-container">
+					<label for="color-picker">选择颜色：</label>
+					<input type="color" id="color-picker" value="#ff5722">
+				</div>
+			</div>
+
+			<div class="control-section">
+				<h2>圆形设置</h2>
+				<p>边数：<span id="sides-value" class="slider-value">10</span></p>
+				<input type="range" id="sides-slider" min="3" max="50" value="10">
+			</div>
+
+			<div class="control-section">
+                <h2>场景控制</h2>
+                <button id="clear-btn" style="background: rgba(244, 67, 54, 0.7);">
+                    <span>🗑️</span> 清空场景
+                </button>
+            </div>
+
+			<div class="control-section">
+				<h2>动画说明</h2>
+				<ul style="list-style-type:none; padding-left:0">
+					<li style="margin-bottom: 8px;">▲ 正三角形: 持续缩放</li>
+                    <li style="margin-bottom: 8px;">◼ 正方形: 绕Z轴旋转</li>
+                    <li style="margin-bottom: 8px;">⬛ 立方体: 绕特定轴旋转</li>
+                    <li style="margin-bottom: 8px;">● 圆形: 随机平移</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="canvas-container">
+			<canvas id="gl-canvas" width="700" height="500"></canvas>
+			<div class="info-panel">当前选择: <span id="current-shape">正三角形</span></div>
+            <div class="stats">场景对象: <span id="object-count">0</span></div>
+		</div>
+	</div>
+
+	<div class="instructions">
+		<h3>使用说明</h3>
+		<p>1. 从左侧面板选择要绘制的图形类型</p>
+        <p>2. 使用颜色选择器设置图形颜色</p>
+        <p>3. 对于圆形，可以使用滑块调整边数</p>
+        <p>4. 在画布上点击鼠标放置图形</p>
+        <p>5. 点击"清空场景"按钮移除所有图形</p>
+	</div>
+</body>
+
+</html>

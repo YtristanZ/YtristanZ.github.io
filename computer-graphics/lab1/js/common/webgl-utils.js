@@ -67,10 +67,10 @@ WebGLUtils = function() {
  */
 var makeFailHTML = function(msg) {
   return '' +
-    '<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>' +
+    '<table style.css="background-color: #8CE; width: 100%; height: 100%;"><tr>' +
     '<td align="center">' +
-    '<div style="display: table-cell; vertical-align: middle;">' +
-    '<div style="">' + msg + '</div>' +
+    '<div style.css="display: table-cell; vertical-align: middle;">' +
+    '<div style.css="">' + msg + '</div>' +
     '</div>' +
     '</td></tr></table>';
 };
