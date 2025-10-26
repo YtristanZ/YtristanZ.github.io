@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式3D模型查看器</title>
+    <script type='text/javascript' src="common/objloader.js"></script>
+    <script type="text/javascript" src="common/webgl-utils.js"></script>
+    <script type="text/javascript" src="common/initShaders.js"></script>
+    <script type="text/javascript" src="common/gl-matrix.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2c3e50;
+            --light-gray: #f5f5f5;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #333;
+            --white: #ffffff;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--secondary-color);
+            margin: 10px 0;
+            padding: 0 20px;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 0 20px 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            background: var(--white);
+            box-shadow: var(--box-shadow);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            flex: 1;
+        }
+
+        canvas {
+            display: block;
+            background: #1a1a1a;
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls-sidebar {
+            width: 350px;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .control-tabs {
+            display: flex;
+            background: var(--secondary-color);
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .control-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            color: var(--white);
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9em;
+        }
+
+        .control-tab.active {
+            background: var(--primary-color);
+        }
+
+        .control-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .control-panels {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .control-panel {
+            display: none;
+        }
+
+        .control-panel.active {
+            display: block;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: right;
+            font-size: 0.9em;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 30px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .projection-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .projection-controls input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .shader-selector {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .shader-selector select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            background: var(--white);
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .controls-sidebar {
+                width: 100%;
+                max-height: 40vh;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .control-tabs {
+                flex-wrap: wrap;
+            }
+
+            .control-tab {
+                flex: 1 0 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>交互式3D模型查看器</h1>
+
+    <div class="main-container">
+        <div class="canvas-container">
+            <canvas id="gl-canvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="controls-sidebar">
+            <ul class="control-tabs">
+                <li class="control-tab active" data-tab="model-load">载入</li>
+                <li class="control-tab" data-tab="model-transform">模型</li>
+                <li class="control-tab" data-tab="projection">投影</li>
+                <li class="control-tab" data-tab="light">光线</li>
+                <li class="control-tab" data-tab="eye-position">视点</li>
+            </ul>
+
+            <div class="control-panels">
+                <!-- 模型载入面板 -->
+                <div class="control-panel active" id="model-load-panel">
+                    <h3>模型载入</h3>
+                    <input type="file" id="fileInput" accept=".obj">
+                    <div class="status" id="fileStatus">等待加载模型文件...</div>
+                    <h3>显示设置</h3>
+                    <div class="radio-group">
+                        <label><input type="radio" name="drawtype" value="wireframe" checked> 线框模式</label>
+                        <label><input type="radio" name="drawtype" value="solid"> 面片模式</label>
+                    </div>
+                    <div class="color-picker">
+                        <label>颜色:</label>
+                        <input type="color" id="objcolor" value="#ff0000">
+                    </div>
+                    <div class="shader-selector">
+                        <label for="shader-select">着色方式:</label>
+                        <select id="shader-select">
+                            <option value="phong">Phong着色</option>
+                            <option value="gouraud">Gouraud着色</option>
+                            <option value="flat">平面着色</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- 模型变换面板 -->
+                <div class="control-panel" id="model-transform-panel">
+                    <h3>模型变换</h3>
+
+                    <div class="control-group">
+                        <label>平移</label>
+                        <div class="slider-container">
+                            <span>X:</span>
+                            <input type="range" id="tx" min="-5" max="5" step="0.1" value="0">
+                            <span class="slider-value" id="tx-value">0.0</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>Y:</span>
+                            <input type="range" id="ty" min="-5" max="5" step="0.1" value="0">
+                            <span class="slider-value" id="ty-value">0.0</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>Z:</span>
+                            <input type="range" id="tz" min="-5" max="5" step="0.1" value="0">
+                            <span class="slider-value" id="tz-value">0.0</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>旋转</label>
+                        <div class="slider-container">
+                            <span>X:</span>
+                            <input type="range" id="rx" min="0" max="360" step="1" value="0">
+                            <span class="slider-value" id="rx-value">0°</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>Y:</span>
+                            <input type="range" id="ry" min="0" max="360" step="1" value="0">
+                            <span class="slider-value" id="ry-value">0°</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>Z:</span>
+                            <input type="range" id="rz" min="0" max="360" step="1" value="0">
+                            <span class="slider-value" id="rz-value">0°</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>缩放</label>
+                        <div class="slider-container">
+                            <input type="range" id="scale" min="0.1" max="8" step="0.1" value="1">
+                            <span class="slider-value" id="scale-value">1.0</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- 投影设置面板 -->
+                <div class="control-panel" id="projection-panel">
+                    <h3>投影设置</h3>
+                    <div class="radio-group">
+                        <label><input type="radio" name="projection" value="ortho" checked> 正交投影</label>
+                        <label><input type="radio" name="projection" value="persp"> 透视投影</label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>投影参数</label>
+                        <div id="ortho-controls">
+                            <div class="projection-controls">
+                                <div>
+                                    <label>左:</label>
+                                    <input type="number" id="ortho-left" value="-5" step="0.5">
+                                </div>
+                                <div>
+                                    <label>右:</label>
+                                    <input type="number" id="ortho-right" value="5" step="0.5">
+                                </div>
+                                <div>
+                                    <label>下:</label>
+                                    <input type="number" id="ortho-bottom" value="-5" step="0.5">
+                                </div>
+                                <div>
+                                    <label>上:</label>
+                                    <input type="number" id="ortho-top" value="5" step="0.5">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="persp-controls" style="display: none;">
+                            <div class="projection-controls">
+                                <div>
+                                    <label>视野:</label>
+                                    <input type="number" id="fov" value="60" min="10" max="120" step="1">°
+                                </div>
+                                <div>
+                                    <label>近平面:</label>
+                                    <input type="number" id="near" value="0.1" min="0.01" step="0.1">
+                                </div>
+                                <div>
+                                    <label>远平面:</label>
+                                    <input type="number" id="far" value="100" min="1" step="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              <!--光线控制面板-->
+                <div class="control-panel" id="light-panel">
+                    <h3>光线控制</h3>
+                    <div class="control-group">
+                        <label>光反射</label>
+                        <div>
+                            <div class="slider-container">
+                                <span>环境光(ka):</span>
+                                <span id="slider-ka-value">1.0</span>
+                                <input type="range" id="slider-ka" min="0" max="1" step="0.01" value="1.0">
+                                <input type="color" id="ka-color" value="#ff0000">
+                            </div>
+                            <div class="slider-container">
+                                <span>漫射光(kd):</span>
+                                <span id="slider-kd-value">1.0</span>
+                                <input type="range" id="slider-kd" min="0" max="1" step="0.01" value="1.0">
+                                <input type="color" id="kd-color" value="#ffffff">
+                            </div>
+                            <div class="slider-container">
+                                <span>镜面光(ks):</span>
+                                <span id="slider-ks-value">1.0</span>
+                                <input type="range" id="slider-ks" min="0" max="1" step="0.01" value="1.0">
+                                <input type="color" id="ks-color" value="#ffffff">
+                            </div>
+                            <div class="slider-container">
+                                <span>光泽度(sh):</span>
+                                <span id="slider-sh-value">80</span>
+                                <input type="range" id="slider-sh" min="1" max="500" step="1" value="80">
+                                <input type="color" id="bk-color" value="#00ffff">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>光点位置</label>
+                        <div>
+                            <div class="slider-container">
+                                <span>X: 1</span>
+                                <input type="range" id="slider-x" min="-20.0" max="20.0" step="0.1" value="1.0">
+                                <span class="slider-value" id="slider-x-value">1.0</span>
+                            </div>
+                            <div class="slider-container">
+                                <span>Y: 1</span>
+                                <input type="range" id="slider-y" min="-20.0" max="20.0" step="0.1" value="1.0">
+                                <span class="slider-value" id="slider-y-value">1.0</span>
+                            </div>
+                            <div class="slider-container">
+                                <span>Z: 1</span>
+                                <input type="range" id="slider-z" min="-10.0" max="10.0" step="0.1" value="1.0">
+                                <span class="slider-value" id="slider-z-value">1.0</span>
+                            </div>
+                        </div>
+                        <label>光线颜色</label>
+                        <div class="color-container">
+                            <div class="slider-container">
+                                <span>Ambient Color:</span>
+                                <input type="color" id="lt-ambient-color" value="#ffffff">
+                            </div>
+                            <div class="slider-container">
+                                <span>Diffuse Color:</span>
+                                <input type="color" id="lt-diffuse-color" value="#ffffff">
+                            </div>
+                            <div class="slider-container">
+                                <span>Specular Color:</span>
+                                <input type="color" id="lt-specular-color" value="#ffffff">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 视点控制面板 -->
+                <div class="control-panel" id="eye-position-panel">
+                    <h3>视点控制</h3>
+                    <div class="control-group">
+                        <label>视点位置 (球坐标)</label>
+                        <div class="slider-container">
+                            <span>半径:</span>
+                            <input type="range" id="slider-radius" min="1" max="50" step="0.1" value="30.0">
+                            <span class="slider-value" id="slider-radius-value">30.0</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>θ角:</span>
+                            <input type="range" id="slider-theta" min="0" max="180" step="1" value="45.0">
+                            <span class="slider-value" id="slider-theta-value">45.0°</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>φ角:</span>
+                            <input type="range" id="slider-phi" min="0" max="360" step="1" value="45.0">
+                            <span class="slider-value" id="slider-phi-value">45.0°</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>视点目标</label>
+                        <div class="slider-container">
+                            <span>X:</span>
+                            <input type="range" id="slider-at-x" min="-10" max="10" step="0.1" value="0.0">
+                            <span class="slider-value" id="slider-at-x-value">0.0</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>Y:</span>
+                            <input type="range" id="slider-at-y" min="-10" max="10" step="0.1" value="0.0">
+                            <span class="slider-value" id="slider-at-y-value">0.0</span>
+                        </div>
+                        <div class="slider-container">
+                            <span>Z:</span>
+                            <input type="range" id="slider-at-z" min="-10" max="10" step="0.1" value="0.0">
+                            <span class="slider-value" id="slider-at-z-value">0.0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 选项卡切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.control-tab');
+            const panels = document.querySelectorAll('.control-panel');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+
+                    // 移除所有活动状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    panels.forEach(p => p.classList.remove('active'));
+
+                    // 添加当前活动状态
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-panel`).classList.add('active');
+                });
+            });
+        });
+    </script>
+
+    <script type="text/javascript" src="js/style.js"></script>
+</body>
+</html>

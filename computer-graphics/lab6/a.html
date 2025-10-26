@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>交互式3D模型查看器</title>
+    <link rel="stylesheet" href="css/a.css" />
+    <script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+in vec4 vPosition;
+in vec4 vColor;
+out vec4 aColor;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+void main() {
+    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    aColor = vColor;
+}</script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+precision mediump float;
+in vec4 aColor;
+out vec4 fColor;
+
+void main() {
+    fColor = aColor;
+}</script>
+
+    <!-- 依赖库 -->
+    <script src="common/webgl-utils.js"></script>
+    <script src="common/gl-matrix-min.js"></script>
+    <script src="common/objloader.js"></script>
+    <script src="js/a.js"></script>
+</head>
+<body onload="init()">
+    <h1>交互式3D模型查看器</h1>
+
+    <div class="container">
+        <!-- 左侧：Canvas -->
+        <div class="canvas-container">
+            <canvas id="gl-canvas" width="800" height="800">
+                您的浏览器不支持HTML5 Canvas。
+            </canvas>
+        </div>
+
+        <!-- 右侧：控制面板 -->
+        <div class="controls">
+
+            <!-- 模型加载 -->
+            <section>
+                <h3>模型操作</h3>
+                <label for="fileInput">选择OBJ模型文件：</label>
+                <input type="file" id="fileInput" accept=".obj" />
+                <pre id="fileDisplay" class="file-preview"></pre>
+            </section>
+
+            <!-- 绘制模式 -->
+            <section>
+                <h3>绘制模式</h3>
+                <label><input type="radio" name="drawMode" id="wireframe" checked /> 线框模式</label><br />
+                <label><input type="radio" name="drawMode" id="solid" /> 实体模式</label><br />
+                <label>颜色：<input type="color" id="objColor" value="#00aaff" /></label>
+            </section>
+
+            <!-- 成像方式 -->
+            <section>
+                <h3>投影方式</h3>
+                <label><input type="radio" name="projType" id="ortho" /> 正交投影</label><br />
+                <label><input type="radio" name="projType" id="perspective" checked /> 透视投影</label><br />
+
+                <!-- 正交参数（隐藏/显示） -->
+                <div id="orthoParams" style="display:none; margin-left:20px;">
+                    <label>X范围 [-<input type="number" id="left" value="-5" step="0.1" size="3"/> : <input type="number" id="right" value="5" step="0.1" size="3"/>]</label><br/>
+                    <label>Y范围 [-<input type="number" id="bottom" value="-5" step="0.1" size="3"/> : <input type="number" id="top" value="5" step="0.1" size="3"/>]</label><br/>
+                    <label>近远平面 [<input type="number" id="near" value="0.01" step="0.01" size="3"/> ~ <input type="number" id="far" value="200" step="1" size="3"/>]</label>
+                </div>
+
+                <!-- 透视参数 -->
+                <div id="perspParams" style="margin-left:20px;">
+                    <label>视场角(FOV)：<input type="range" id="fovy" min="10" max="120" value="60" /> <span id="fovyValue">60°</span></label><br/>
+                    <label>近远平面 [<input type="number" id="nearPersp" value="0.01" step="0.01" size="3"/> ~ <input type="number" id="farPersp" value="200" step="1" size="3"/>]</label>
+                </div>
+            </section>
+
+            <!-- 变换类型选择 -->
+            <section>
+                <h3>变换目标</h3>
+                <label><input type="radio" name="transformTarget" id="transformModel" checked /> 变换模型</label><br/>
+                <label><input type="radio" name="transformTarget" id="transformCamera" /> 变换相机</label>
+            </section>
+
+            <!-- 平移、旋转、缩放 -->
+            <section>
+                <h3>变换参数</h3>
+                <table>
+                    <tr>
+                        <th></th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>Z</th>
+                    </tr>
+                    <tr>
+                        <td>平移</td>
+                        <td><input type="range" id="transX" min="-10" max="10" value="0" step="0.01" /></td>
+                        <td><input type="range" id="transY" min="-10" max="10" value="0" step="0.01" /></td>
+                        <td><input type="range" id="transZ" min="-10" max="10" value="-5" step="0.01" /></td>
+                    </tr>
+                    <tr>
+                        <td>旋转(°)</td>
+                        <td><input type="range" id="rotX" min="-180" max="180" value="0" step="1" /></td>
+                        <td><input type="range" id="rotY" min="-180" max="180" value="0" step="1" /></td>
+                        <td><input type="range" id="rotZ" min="-180" max="180" value="0" step="1" /></td>
+                    </tr>
+                    <tr>
+                        <td>缩放</td>
+                        <td><input type="range" id="scaleX" min="0.1" max="5" value="1" step="0.01" /></td>
+                        <td><input type="range" id="scaleY" min="0.1" max="5" value="1" step="0.01" /></td>
+                        <td><input type="range" id="scaleZ" min="0.1" max="5" value="1" step="0.01" /></td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- 背景颜色 -->
+            <section>
+                <h3>背景颜色</h3>
+                <label><input type="color" id="bgColor" value="#ffffff" /></label>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        let renderer;
+        function init() {
+            renderer = new Renderer("gl-canvas",
+                document.getElementById("vertex-shader").textContent,
+                document.getElementById("fragment-shader").textContent
+            );
+            renderer.init();
+
+            // 绑定事件
+            document.getElementById("fileInput").onchange = function (event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                document.getElementById("fileDisplay").textContent = "加载中...";
+                renderer.modelFile = file;
+                renderer.initModel();
+            };
+
+            // 投影切换
+            document.querySelectorAll('input[name="projType"]').forEach(el =>
+                el.addEventListener("change", updateProjection)
+            );
+
+            // 参数变化监听
+            ["fovy", "nearPersp", "farPersp", "left", "right", "bottom", "top", "near", "far"].forEach(id =>
+                document.getElementById(id).addEventListener("input", render)
+            );
+
+            // 颜色与背景
+            document.getElementById("objColor").addEventListener("input", render);
+            document.getElementById("bgColor").addEventListener("input", render);
+
+            // 绘制模式
+            document.querySelectorAll('input[name="drawMode"]').forEach(el =>
+                el.addEventListener("change", render)
+            );
+
+            // 所有滑块
+            document.querySelectorAll("input[type=range]").forEach(input =>
+                input.addEventListener("input", render)
+            );
+
+            // 更新FOV显示
+            document.getElementById("fovy").addEventListener("input", function() {
+                document.getElementById("fovyValue").textContent = this.value + "°";
+            });
+        }
+
+        function updateProjection() {
+            const isOrtho = document.getElementById("ortho").checked;
+            document.getElementById("orthoParams").style.display = isOrtho ? "block" : "none";
+            document.getElementById("perspParams").style.display = isOrtho ? "none" : "block";
+            render();
+        }
+
+        function render() {
+            if (renderer && renderer.mesh) renderer.display();
+        }
+    </script>
+</body>
+</html>

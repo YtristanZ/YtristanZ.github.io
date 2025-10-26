@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+    <title>立方体透视投影视图</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9f7e9;
+            border-radius: 4px;
+        }
+        .control-group {
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+    </style>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        #version 300 es
+
+        in vec4 vPosition;
+        in vec4 vColor;
+        out vec4 aColor;
+
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+
+        void main(){
+            gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+            aColor = vColor;
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #version 300 es
+        precision mediump float;
+
+        in vec4 aColor;
+        out vec4 fColor;
+        void main(){
+            fColor = aColor;
+        }
+    </script>
+</head>
+<body>
+    <h1>立方体透视投影视图</h1>
+
+    <canvas id="proj-canvas" width="512" height="512">
+        您的浏览器不支持HTML5 Canvas元素
+    </canvas>
+
+    <div class="status" id="status">
+        视点位置: (0.00, 0.00, 1.00) | 视场角: 45.0°
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <h3>视点位置控制</h3>
+            <button id="btn1">增加Z距离</button>
+            <button id="btn2">减少Z距离</button>
+        </div>
+
+        <div class="control-group">
+            <h3>视角角度控制</h3>
+            <button id="btn5">增加方位角</button>
+            <button id="btn6">减少方位角</button>
+            <button id="btn7">增加仰角</button>
+            <button id="btn8">减少仰角</button>
+        </div>
+
+        <div class="control-group">
+            <h3>投影参数控制</h3>
+            <button id="btn9">增大视场角</button>
+            <button id="btn10">减小视场角</button>
+            <button id="btn11">重置所有参数</button>
+        </div>
+    </div>
+    <!-- 假设这些库已正确加载 -->
+    <script type="text/javascript" src="common/webgl-utils.js"></script>
+    <script type="text/javascript" src="common/initShaders.js"></script>
+    <script type="text/javascript" src="common/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="js/b.js"></script>
+</body>
+</html>
