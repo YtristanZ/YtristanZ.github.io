@@ -141,10 +141,6 @@ function preloadTextures() {
     loadedTextures.wood = textureLoader.load('wood.jpg');
 
 
-    // 设置纹理重复
-    loadedTextures.grass.wrapS = loadedTextures.grass.wrapT = THREE.RepeatWrapping;
-    loadedTextures.grass.repeat.set(4, 4);
-
     loadedTextures.wood.wrapS = loadedTextures.wood.wrapT = THREE.RepeatWrapping;
     loadedTextures.wood.repeat.set(2, 2);
 }
